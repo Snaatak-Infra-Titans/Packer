@@ -1,0 +1,27 @@
+[Unit]
+Description=OTMS Salary API Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+
+User=ubuntu
+Group=ubuntu
+
+WorkingDirectory=/home/ubuntu/Salary_API
+
+ExecStart=/usr/bin/java -jar /home/ubuntu/Salary_API/target/salary-0.1.0-RELEASE.jar
+
+SuccessExitStatus=143
+
+Restart=always
+RestartSec=5
+
+StandardOutput=append:/home/ubuntu/logs/salary.log
+StandardError=append:/home/ubuntu/logs/salary.log
+
+Environment="JAVA_OPTS=-Xms256m -Xmx512m"
+
+[Install]
+WantedBy=multi-user.target
