@@ -75,28 +75,30 @@ EOF
 
 echo "Finding VPC..."
 
+echo "Finding Default VPC..."
+
 VPC_ID=$(aws ec2 describe-vpcs \
     --region "$AWS_REGION" \
-    --filters "Name=tag:Name,Values=$VPC_NAME" \
+    --filters Name=is-default,Values=true \
     --query "Vpcs[0].VpcId" \
     --output text)
 
 echo "Finding Backend Subnet..."
 
+echo "Finding Default Subnet..."
+
 SUBNET_ID=$(aws ec2 describe-subnets \
     --region "$AWS_REGION" \
-    --filters \
-        Name=vpc-id,Values="$VPC_ID" \
-        Name=tag:Tier,Values=backend \
+    --filters Name=vpc-id,Values="$VPC_ID" \
     --query "Subnets[0].SubnetId" \
     --output text)
 
-echo "Finding Salary Packer Security Group..."
+echo "Finding Default Security Group..."
 
 SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
     --region "$AWS_REGION" \
     --filters \
-        Name=tag:Application,Values=salary \
+        Name=group-name,Values=default \
         Name=vpc-id,Values="$VPC_ID" \
     --query "SecurityGroups[0].GroupId" \
     --output text)
