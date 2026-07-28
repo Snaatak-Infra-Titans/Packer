@@ -5,6 +5,11 @@ set -Eeuo pipefail
 echo "========================================="
 echo "Validating Salary AMI"
 echo "========================================="
+#############################################
+# Verifying artifact available
+#############################################
+echo "Checking jar..."
+test -f /home/ubuntu/Salary_API/target/salary-0.1.0-RELEASE.jar
 
 #############################################
 # Check Salary Service
