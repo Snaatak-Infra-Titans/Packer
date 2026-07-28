@@ -48,7 +48,11 @@ rm -rf Salary_API
 
 git clone -b main https://github.com/Snaatak-Infra-Titans/Salary_API.git
 
-cd Salary_API
+sudo chown -R ubuntu:ubuntu /home/ubuntu/Salary_API
+
+cd /home/ubuntu/Salary_API
+
+echo "Repository cloned successfully."
 
 echo "========================================="
 echo "Building Salary API"
