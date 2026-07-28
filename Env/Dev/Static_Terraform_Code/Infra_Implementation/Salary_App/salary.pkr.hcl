@@ -28,11 +28,7 @@ source "amazon-ebs" "salary" {
     most_recent = true
   }
 
-  subnet_id = var.subnet_id
-
-  security_group_ids = [
-    var.security_group_id
-  ]
+  
 
   associate_public_ip_address = true
 
