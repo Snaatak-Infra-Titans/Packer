@@ -33,12 +33,3 @@ variable "ami_name" {
   type        = string
 }
 
-variable "subnet_id" {
-  description = "Subnet where the temporary Packer instance will be launched"
-  type        = string
-}
-
-variable "security_group_id" {
-  description = "Security Group attached to the temporary Packer instance"
-  type        = string
-}
