@@ -35,14 +35,6 @@ echo "Enabling Salary Service..."
 sudo systemctl enable salary
 
 #############################################
-# Start Salary Service
-#############################################
-
-echo "Starting Salary Service..."
-
-sudo systemctl start salary
-
-#############################################
 # Wait for Application
 #############################################
 
