@@ -55,10 +55,15 @@ cd /home/ubuntu/Salary_API
 echo "Repository cloned successfully."
 
 echo "========================================="
-echo "Building Salary API"
+echo "Verifying Repository Structure"
 echo "========================================="
 
-mvn clean package -DskipTests
+test -f pom.xml
+test -d src
+test -d migration
+test -f Makefile
+
+echo "Repository structure verified."
 
 echo "========================================="
 echo "Verifying Build Artifact"
