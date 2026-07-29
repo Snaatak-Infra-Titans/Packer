@@ -66,6 +66,14 @@ test -f Makefile
 echo "Repository structure verified."
 
 echo "========================================="
+echo "Build Artifact"
+echo "========================================="
+
+echo "Building artifact..."
+
+mvn package
+
+echo "========================================="
 echo "Verifying Build Artifact"
 echo "========================================="
 
