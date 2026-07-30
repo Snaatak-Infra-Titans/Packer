@@ -1,0 +1,25 @@
+[Unit]
+Description=ScyllaDB to Elasticsearch Sync Worker
+After=network.target elasticsearch.service notification-api.service
+Requires=elasticsearch.service notification-api.service
+
+[Service]
+Type=simple
+
+User=ubuntu
+Group=ubuntu
+
+WorkingDirectory=/home/ubuntu/Notification
+
+Environment=CONFIG_FILE=/home/ubuntu/Notification/config.yaml
+
+ExecStart=/home/ubuntu/Notification/venv/bin/python /home/ubuntu/Notification/scylla_to_es_sync.py
+
+Restart=always
+RestartSec=10
+
+StandardOutput=append:/home/ubuntu/logs/notification-sync.log
+StandardError=append:/home/ubuntu/logs/notification-sync.log
+
+[Install]
+WantedBy=multi-user.target
