@@ -10,6 +10,26 @@ sudo apt-get clean
 sudo rm -rf /var/lib/apt/lists/*
 sudo apt-get update
 
+echo "========== APT CACHE =========="
+
+apt-cache policy zip
+apt-cache policy make
+apt-cache policy maven
+
+echo "========== APT SEARCH =========="
+
+apt-cache search "^zip$"
+apt-cache search "^make$"
+apt-cache search "^maven$"
+
+echo "========== DPKG ARCH =========="
+
+dpkg --print-architecture
+
+echo "========== SOURCES =========="
+
+grep -R "^deb" /etc/apt/
+
 echo "========================================="
 echo "Debug Information"
 echo "========================================="
