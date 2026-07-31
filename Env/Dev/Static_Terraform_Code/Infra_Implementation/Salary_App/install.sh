@@ -25,7 +25,8 @@ sudo apt-get install -y \
     jq \
     apt-transport-https \
     ca-certificates \
-    gnupg
+    gnupg \
+    make
 
 echo "========================================="
 echo "Installing Golang Migrate CLI"
