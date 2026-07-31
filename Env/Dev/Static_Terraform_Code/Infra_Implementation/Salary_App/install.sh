@@ -28,6 +28,21 @@ sudo apt-get install -y \
     gnupg
 
 echo "========================================="
+echo "Installing Golang Migrate CLI"
+echo "========================================="
+
+MIGRATE_VERSION="4.18.3"
+
+wget -O /tmp/migrate.tar.gz \
+https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VERSION}/migrate.linux-amd64.tar.gz
+
+sudo tar -xzf /tmp/migrate.tar.gz -C /usr/local/bin
+
+sudo chmod +x /usr/local/bin/migrate
+
+rm -f /tmp/migrate.tar.gz
+
+echo "========================================="
 echo "Verifying Installed Versions"
 echo "========================================="
 
@@ -37,6 +52,7 @@ git --version
 python3 --version
 pip3 --version
 jq --version
+migrate -version
 
 echo "========================================="
 echo "Cloning Salary Repository"
@@ -62,16 +78,15 @@ test -f pom.xml
 test -d src
 test -d migration
 test -f Makefile
+test -f migration.json
 
 echo "Repository structure verified."
 
 echo "========================================="
-echo "Build Artifact"
+echo "Building Salary API"
 echo "========================================="
 
-echo "Building artifact..."
-
-mvn package
+mvn clean package -DskipTests
 
 echo "========================================="
 echo "Verifying Build Artifact"
