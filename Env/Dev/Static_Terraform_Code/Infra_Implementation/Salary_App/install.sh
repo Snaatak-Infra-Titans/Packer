@@ -6,7 +6,24 @@ echo "========================================="
 echo "Updating Ubuntu Packages"
 echo "========================================="
 
-sudo apt-get update -y
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
+sudo apt-get update
+
+echo "========================================="
+echo "Debug Information"
+echo "========================================="
+
+cat /etc/os-release
+
+echo "---------------- APT Sources ----------------"
+cat /etc/apt/sources.list || true
+ls -l /etc/apt/sources.list.d/ || true
+
+echo "---------------- Package Lookup ----------------"
+apt-cache policy zip
+apt-cache policy make
+apt-cache policy maven
 
 echo "========================================="
 echo "Installing Required Packages"
