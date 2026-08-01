@@ -35,7 +35,7 @@ sudo mkdir -p /etc/notification
 sudo tee /etc/notification/notification.env >/dev/null <<EOF
 SMTP_FROM=jenkinsotms@gmail.com
 SMTP_USERNAME=jenkinsotms@gmail.com
-SMTP_PASSWORD=jenkinsotms@gmail.com
+SMTP_PASSWORD=zvdftllukvincrgj
 EOF
 
 sudo chmod 600 /etc/notification/notification.env
