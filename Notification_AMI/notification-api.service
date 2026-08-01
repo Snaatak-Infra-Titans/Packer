@@ -12,6 +12,7 @@ Group=ubuntu
 WorkingDirectory=/home/ubuntu/Notification
 
 Environment=CONFIG_FILE=/home/ubuntu/Notification/config.yaml
+EnvironmentFile=/etc/notification/notification.env
 
 ExecStart=/home/ubuntu/Notification/venv/bin/python \
 /home/ubuntu/Notification/notification_api.py
