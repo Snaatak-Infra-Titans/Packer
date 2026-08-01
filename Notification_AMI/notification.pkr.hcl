@@ -28,15 +28,11 @@ source "amazon-ebs" "notification" {
     most_recent = true
   }
 
-  subnet_id = var.subnet_id
-
-  security_group_ids = [
-    var.security_group_id
-  ]
-
-  
-
+  subnet_id                   = var.subnet_id
   associate_public_ip_address = true
+
+  # Let Packer create and delete a temporary Security Group
+  temporary_security_group_source_public_ip = true
 
   tags = {
     Name         = var.ami_name
@@ -99,5 +95,4 @@ build {
   provisioner "shell" {
     script = "validate.sh"
   }
-
 }
