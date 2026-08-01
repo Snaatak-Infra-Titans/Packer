@@ -81,12 +81,12 @@ echo "Checking Elasticsearch installation..."
 
 dpkg -l | grep elasticsearch
 
-if [ -f /usr/share/elasticsearch/bin/elasticsearch ]; then
-    /usr/share/elasticsearch/bin/elasticsearch --version
-else
+if [ ! -f /usr/share/elasticsearch/bin/elasticsearch ]; then
     echo "ERROR: Elasticsearch binary not found."
     exit 1
 fi
+
+echo "Elasticsearch package installed successfully."
 
 echo "Cloning Notification repository..."
 
