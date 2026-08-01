@@ -76,7 +76,17 @@ pip3 --version
 java -version
 git --version
 jq --version
-elasticsearch --version
+
+echo "Checking Elasticsearch installation..."
+
+dpkg -l | grep elasticsearch
+
+if [ -f /usr/share/elasticsearch/bin/elasticsearch ]; then
+    /usr/share/elasticsearch/bin/elasticsearch --version
+else
+    echo "ERROR: Elasticsearch binary not found."
+    exit 1
+fi
 
 echo "Cloning Notification repository..."
 
@@ -122,5 +132,10 @@ echo "Setting ownership..."
 
 sudo chown -R ubuntu:ubuntu /home/ubuntu/Notification
 sudo chown -R ubuntu:ubuntu /home/ubuntu/logs
+
+echo "Cleaning apt cache..."
+
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
 
 echo "Notification AMI installation completed successfully."
