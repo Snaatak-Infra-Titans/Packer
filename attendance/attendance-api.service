@@ -1,35 +1,22 @@
 [Unit]
-Description=OTMS Attendance API
+Description=Attendance API
+
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
 
 User=ubuntu
 Group=ubuntu
 
 WorkingDirectory=/home/ubuntu/Attendance_API
 
-# Run Liquibase before starting the API
-ExecStartPre=/usr/local/bin/liquibase \
-  --defaults-file=/home/ubuntu/Attendance_API/liquibase.properties \
-  update
+Environment="PATH=/home/ubuntu/Attendance_API/.venv/bin"
 
-ExecStart=/home/ubuntu/Attendance_API/.venv/bin/gunicorn \
-    app:app \
-    --bind 0.0.0.0:8081 \
-    --workers 2 \
-    --timeout 120 \
-    --log-config /home/ubuntu/Attendance_API/log.conf
+ExecStart=/home/ubuntu/Attendance_API/.venv/bin/gunicorn ...
 
 Restart=always
-RestartSec=5
-
-Environment=PYTHONUNBUFFERED=1
-
-StandardOutput=journal
-StandardError=journal
 
 [Install]
+
 WantedBy=multi-user.target

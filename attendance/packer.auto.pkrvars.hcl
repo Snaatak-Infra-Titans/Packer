@@ -6,7 +6,7 @@ application = "otms"
 owner       = "Infra-Titans"
 cost_center = "Snaatak"
 
-instance_type = "t3.small"
+instance_type = "m7i-flex.large"
 
 ami_name = "dev-otms-attendance-api"
 

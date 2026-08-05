@@ -7,24 +7,30 @@ packer {
   }
 }
 
+###############################################################################
+# Source AMI
+###############################################################################
+
 source "amazon-ebs" "attendance" {
 
   region        = var.aws_region
   instance_type = var.instance_type
-  ssh_username  = "ubuntu"
-  ssh_timeout   = "20m"
+
+  ssh_username = "ubuntu"
+  ssh_timeout  = "30m"
 
   ami_name        = "${var.ami_name}-${formatdate("YYYYMMDD-HHmmss", timestamp())}"
-  ami_description = "Golden AMI for OTMS Attendance API with Liquibase support"
+  ami_description = "Golden AMI for OTMS Attendance API"
 
   source_ami_filter {
+
     filters = {
       name                = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
       virtualization-type = "hvm"
       root-device-type    = "ebs"
     }
 
-    owners      = ["099720109477"] # Canonical
+    owners      = ["099720109477"]
     most_recent = true
   }
 
@@ -36,24 +42,59 @@ source "amazon-ebs" "attendance" {
 
   associate_public_ip_address = true
 
+  ena_support = true
+
+  launch_block_device_mappings {
+
+    device_name = "/dev/sda1"
+
+    volume_size = 15
+
+    volume_type = "gp3"
+
+    delete_on_termination = true
+
+  }
+
   tags = {
+
     Name        = var.ami_name
+
     Environment = var.environment
+
     Application = var.application
+
     Service     = "attendance-api"
+
     Owner       = var.owner
+
     CostCenter  = var.cost_center
+
     CreatedBy   = "Packer"
+
   }
 
   run_tags = {
-    Name        = "attendance-api-packer-builder"
+
+    Name = "attendance-api-packer-builder"
+
     Environment = var.environment
+
     Application = var.application
-    Service     = "attendance-api"
-    Owner       = var.owner
+
+    Service = "attendance-api"
+
+    Owner = var.owner
+
+    CreatedBy = "Packer"
+
   }
+
 }
+
+###############################################################################
+# Build
+###############################################################################
 
 build {
 
@@ -63,34 +104,64 @@ build {
     "source.amazon-ebs.attendance"
   ]
 
-  #
-  # Install required packages, Liquibase,
-  # PostgreSQL JDBC driver and Attendance API
-  #
+  ############################################################
+  # Install OS packages and Attendance API
+  ############################################################
+
   provisioner "shell" {
+
     script = "install.sh"
+
+    execute_command = "chmod +x {{ .Path }} && sudo {{ .Path }}"
+
   }
 
+  ############################################################
+  # Upload Attendance API Service
+  ############################################################
 
-  #
-  # Copy Attendance API systemd service
-  #
   provisioner "file" {
-    source      = "attendance-api.service"
+
+    source = "attendance-api.service"
+
     destination = "/tmp/attendance-api.service"
+
   }
 
-  #
-  # Configure application, Liquibase and service
-  #
+  ############################################################
+  # Upload Migration Service
+  ############################################################
+
+  provisioner "file" {
+
+    source = "attendance-migration.service"
+
+    destination = "/tmp/attendance-migration.service"
+
+  }
+
+  ############################################################
+  # Configure Application
+  ############################################################
+
   provisioner "shell" {
+
     script = "configure.sh"
+
+    execute_command = "chmod +x {{ .Path }} && sudo {{ .Path }}"
+
   }
 
-  #
-  # Validate the AMI
-  #
+  ############################################################
+  # Validate AMI
+  ############################################################
+
   provisioner "shell" {
+
     script = "validate.sh"
+
+    execute_command = "chmod +x {{ .Path }} && sudo {{ .Path }}"
+
   }
+
 }

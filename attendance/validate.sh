@@ -1,60 +1,238 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+################################################################################
+#
+# Script Name : validate.sh
+#
+# Description :
+# Performs post-install validation of the Attendance API Golden AMI.
+#
+################################################################################
 
-APP_DIR="/home/ubuntu/Attendance_API"
+set -Eeuo pipefail
 
-echo "===================================="
-echo "Validating Attendance API AMI..."
-echo "===================================="
+##############################################
+# Variables
+##############################################
 
-echo "Checking Python..."
+readonly APP_USER="ubuntu"
+
+readonly APP_DIR="/home/ubuntu/Attendance_API"
+
+readonly SERVICE_NAME="attendance-api"
+
+readonly SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+
+readonly LOG_DIR="/var/log/attendance-api"
+
+readonly JDBC_DRIVER="${APP_DIR}/lib/postgresql-42.7.2.jar"
+
+##############################################
+# Logging
+##############################################
+
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+BLUE="\033[1;34m"
+NC="\033[0m"
+
+log_info() {
+
+    echo -e "${BLUE}[INFO]${NC} $1"
+
+}
+
+log_success() {
+
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+
+}
+
+log_error() {
+
+    echo -e "${RED}[ERROR]${NC} $1"
+
+}
+
+##############################################
+# Error Handler
+##############################################
+
+error_handler() {
+
+    log_error "Validation failed at line ${1}"
+
+    exit 1
+
+}
+
+trap 'error_handler ${LINENO}' ERR
+
+##############################################
+# Root Check
+##############################################
+
+if [[ $EUID -ne 0 ]]
+then
+
+    log_error "Run validation as root."
+
+    exit 1
+
+fi
+
+##############################################
+# Software Validation
+##############################################
+
+log_info "Checking installed software..."
+
 python3.11 --version
 
-echo "Checking Poetry..."
-poetry --version
-
-echo "Checking Java..."
 java -version
 
-echo "Checking Liquibase..."
-liquibase --version
+git --version
 
-echo "Checking PostgreSQL Client..."
+poetry --version
+
+liquibase --version >/dev/null
+
 psql --version
 
-echo "Checking Redis Client..."
 redis-cli --version
 
-echo "Checking Attendance API directory..."
+log_success "Software validation passed."
 
-test -d "${APP_DIR}"
+##############################################
+# Repository Validation
+##############################################
 
-echo "Checking required files..."
+log_info "Checking Attendance API..."
 
-test -f "${APP_DIR}/app.py"
-test -f "${APP_DIR}/config.yaml"
-test -f "${APP_DIR}/liquibase.properties"
-test -f "${APP_DIR}/migration/db.changelog-master.xml"
-test -f "${APP_DIR}/log.conf"
-test -f "${APP_DIR}/lib/postgresql-42.7.2.jar"
+required_files=(
 
-echo "Checking virtual environment..."
+"${APP_DIR}/app.py"
 
-test -d "${APP_DIR}/.venv"
+"${APP_DIR}/config.yaml"
 
-echo "Checking Gunicorn..."
+"${APP_DIR}/poetry.lock"
 
-test -x "${APP_DIR}/.venv/bin/gunicorn"
+"${APP_DIR}/pyproject.toml"
 
-echo "Checking systemd service..."
+"${APP_DIR}/liquibase.properties"
 
-test -f /etc/systemd/system/attendance-api.service
+"${APP_DIR}/migration/db.changelog-master.xml"
 
-echo "Checking service enabled..."
+"${APP_DIR}/log.conf"
 
-systemctl is-enabled attendance-api.service
+"${JDBC_DRIVER}"
 
-echo "===================================="
-echo "AMI Validation Successful"
-echo "===================================="
+)
+
+for file in "${required_files[@]}"
+do
+
+    [[ -e "$file" ]] || {
+
+        log_error "$file missing."
+
+        exit 1
+
+    }
+
+done
+
+log_success "Repository validation passed."
+
+##############################################
+# Virtual Environment
+##############################################
+
+log_info "Checking Python virtual environment..."
+
+[[ -d "${APP_DIR}/.venv" ]]
+
+[[ -x "${APP_DIR}/.venv/bin/python" ]]
+
+[[ -x "${APP_DIR}/.venv/bin/gunicorn" ]]
+
+sudo -u "${APP_USER}" "${APP_DIR}/.venv/bin/python" -c "
+
+import flask
+import psycopg2
+import redis
+import yaml
+import gunicorn
+
+"
+
+log_success "Virtual environment verified."
+
+##############################################
+# JDBC Driver
+##############################################
+
+log_info "Checking PostgreSQL JDBC driver..."
+
+[[ -s "${JDBC_DRIVER}" ]]
+
+log_success "JDBC driver verified."
+
+##############################################
+# Log Directory
+##############################################
+
+log_info "Checking log directory..."
+
+[[ -d "${LOG_DIR}" ]]
+
+log_success "Log directory verified."
+
+##############################################
+# Systemd Validation
+##############################################
+
+log_info "Checking systemd service..."
+
+[[ -f "${SERVICE_FILE}" ]]
+
+systemd-analyze verify "${SERVICE_FILE}"
+
+systemctl is-enabled "${SERVICE_NAME}" >/dev/null
+
+log_success "Systemd validation passed."
+
+##############################################
+# Final Summary
+##############################################
+
+echo
+echo "==========================================="
+echo " Attendance API AMI Validation Successful"
+echo "==========================================="
+
+echo "Application Directory : ${APP_DIR}"
+
+echo "Systemd Service       : ${SERVICE_NAME}"
+
+echo "Python Version        : $(python3.11 --version 2>&1)"
+
+echo "Poetry Version        : $(poetry --version)"
+
+echo "Liquibase Installed   : Yes"
+
+echo "Virtual Environment   : OK"
+
+echo "Gunicorn              : OK"
+
+echo "JDBC Driver           : OK"
+
+echo "Service Enabled       : YES"
+
+echo
+
+echo "==========================================="
+
+log_success "Golden AMI validation completed successfully."
+
+exit 0

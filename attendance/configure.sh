@@ -1,92 +1,312 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -Eeuo pipefail
 
-APP_DIR="/home/ubuntu/Attendance_API"
-SERVICE_NAME="attendance-api"
-SERVICE_SOURCE="/tmp/attendance-api.service"
-SERVICE_DESTINATION="/etc/systemd/system/${SERVICE_NAME}.service"
+readonly APP_USER="ubuntu"
+readonly APP_GROUP="ubuntu"
 
-echo "=========================================="
-echo "Configuring Attendance API..."
-echo "=========================================="
+readonly APP_HOME="/home/${APP_USER}"
+readonly APP_DIR="${APP_HOME}/Attendance_API"
 
-echo "Verifying Attendance API files..."
+readonly LOG_DIR="/var/log/attendance-api"
+
+readonly SERVICE_NAME="attendance-api"
+readonly MIGRATION_SERVICE_NAME="attendance-migration"
+
+readonly SERVICE_FILE="/tmp/attendance-api.service"
+readonly MIGRATION_SERVICE_FILE="/tmp/attendance-migration.service"
+
+readonly SYSTEMD_DIR="/etc/systemd/system"
+
+readonly SYSTEMD_SERVICE="${SYSTEMD_DIR}/${SERVICE_NAME}.service"
+readonly SYSTEMD_MIGRATION_SERVICE="${SYSTEMD_DIR}/${MIGRATION_SERVICE_NAME}.service"
+
+##############################################
+# Logging
+##############################################
+
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+BLUE="\033[1;34m"
+YELLOW="\033[1;33m"
+NC="\033[0m"
+
+log_info() {
+
+    echo -e "${BLUE}[INFO]${NC} $1"
+
+}
+
+log_success() {
+
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+
+}
+
+log_warn() {
+
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+
+}
+
+log_error() {
+
+    echo -e "${RED}[ERROR]${NC} $1"
+
+}
+
+##############################################
+# Error Handling
+##############################################
+
+error_handler() {
+
+    log_error "Configuration failed at line ${1}"
+
+    exit 1
+
+}
+
+trap 'error_handler ${LINENO}' ERR
+
+##############################################
+# Root Validation
+##############################################
+
+if [[ $EUID -ne 0 ]]
+then
+
+    log_error "Run as root."
+
+    exit 1
+
+fi
+
+##############################################
+# Verify Installation
+##############################################
+
+log_info "Checking Attendance API installation..."
 
 required_files=(
-    "${APP_DIR}/app.py"
-    "${APP_DIR}/config.yaml"
-    "${APP_DIR}/liquibase.properties"
-    "${APP_DIR}/migration/db.changelog-master.xml"
-    "${APP_DIR}/lib/postgresql-42.7.2.jar"
-    "${APP_DIR}/log.conf"
-    "${APP_DIR}/.venv/bin/gunicorn"
+
+"${APP_DIR}/app.py"
+"${APP_DIR}/config.yaml"
+"${APP_DIR}/liquibase.properties"
+"${APP_DIR}/log.conf"
+"${APP_DIR}/migration/db.changelog-master.xml"
+"${APP_DIR}/.venv/bin/python"
+"${APP_DIR}/.venv/bin/gunicorn"
+"${APP_DIR}/lib/postgresql-42.7.2.jar"
+
 )
 
-for file in "${required_files[@]}"; do
-    if [[ ! -e "$file" ]]; then
-        echo "ERROR: Required file not found -> $file"
+for file in "${required_files[@]}"
+do
+
+    if [[ ! -e "$file" ]]
+    then
+
+        log_error "$file not found."
+
         exit 1
+
     fi
+
 done
 
-echo "Repository verification successful."
+log_success "Installation verified."
 
-echo "Setting ownership..."
+##############################################
+# Ownership
+##############################################
 
-sudo chown -R ubuntu:ubuntu "${APP_DIR}"
+log_info "Setting ownership..."
 
-echo "Setting permissions..."
+chown -R "${APP_USER}:${APP_GROUP}" "${APP_DIR}"
 
-sudo find "${APP_DIR}" -type d -exec chmod 755 {} \;
-sudo find "${APP_DIR}" -type f -exec chmod 644 {} \;
+##############################################
+# Permissions
+##############################################
 
-sudo chmod 755 "${APP_DIR}/.venv/bin/"*
-sudo chmod 755 "${APP_DIR}/lib"
+log_info "Applying permissions..."
 
-sudo chmod 644 "${APP_DIR}/lib/postgresql-42.7.2.jar"
+find "${APP_DIR}" -type d -exec chmod 755 {} \;
 
-# Files containing credentials
-sudo chmod 600 "${APP_DIR}/config.yaml"
-sudo chmod 600 "${APP_DIR}/liquibase.properties"
+find "${APP_DIR}" -type f \
+     ! -name "*.yaml" \
+     ! -name "*.properties" \
+     -exec chmod 644 {} \;
 
-echo "Installing systemd service..."
+chmod 755 "${APP_DIR}/.venv/bin/"*
 
-if [[ ! -f "${SERVICE_SOURCE}" ]]; then
-    echo "ERROR: ${SERVICE_SOURCE} not found."
+chmod 600 "${APP_DIR}/config.yaml"
+
+chmod 600 "${APP_DIR}/liquibase.properties"
+
+chmod 644 "${APP_DIR}/lib/postgresql-42.7.2.jar"
+
+log_success "Permissions configured."
+
+##############################################
+# Log Directory
+##############################################
+
+mkdir -p "${LOG_DIR}"
+
+chown "${APP_USER}:${APP_GROUP}" "${LOG_DIR}"
+
+chmod 755 "${LOG_DIR}"
+
+log_success "Log directory ready."
+
+##############################################
+# Validate Service File
+##############################################
+
+log_info "Validating systemd service file..."
+
+if [[ ! -f "${SERVICE_FILE}" ]]
+then
+    log_error "Service file not found: ${SERVICE_FILE}"
     exit 1
 fi
 
-sudo install \
+grep -q "ExecStart=" "${SERVICE_FILE}" || {
+    log_error "Invalid systemd service file."
+    exit 1
+}
+
+log_success "Service file validation completed."
+
+##############################################
+# Install Systemd Services
+##############################################
+
+log_info "Installing systemd service files..."
+
+# Attendance Migration Service
+install \
     -o root \
     -g root \
     -m 644 \
-    "${SERVICE_SOURCE}" \
-    "${SERVICE_DESTINATION}"
+    "${MIGRATION_SERVICE_FILE}" \
+    "${SYSTEMD_MIGRATION_SERVICE}"
 
-echo "Creating log directory..."
+# Attendance API Service
+install \
+    -o root \
+    -g root \
+    -m 644 \
+    "${SERVICE_FILE}" \
+    "${SYSTEMD_SERVICE}"
 
-sudo mkdir -p /var/log/attendance-api
-sudo chown ubuntu:ubuntu /var/log/attendance-api
-sudo chmod 755 /var/log/attendance-api
+log_success "Systemd service files installed."
 
-echo "Reloading systemd..."
+##############################################
+# Reload systemd
+##############################################
 
-sudo systemctl daemon-reload
+log_info "Reloading systemd..."
 
-echo "Enabling Attendance API service..."
+systemctl daemon-reload
 
-sudo systemctl enable "${SERVICE_NAME}.service"
+log_success "Systemd daemon reloaded."
+
+##############################################
+# Enable Services
+##############################################
+
+log_info "Enabling systemd services..."
+
+systemctl enable "${MIGRATION_SERVICE_NAME}"
+
+systemctl enable "${SERVICE_NAME}"
+
+log_success "Systemd services enabled."
+
+##############################################
+# Ensure Service is Stopped
+##############################################
 
 #
-# IMPORTANT:
-# Do NOT start the service during the AMI build.
-# Liquibase will execute automatically when the EC2
-# instance boots for the first time.
+# IMPORTANT
+#
+# The application must NOT start while
+# creating the Golden AMI.
+#
+# Liquibase migrations should execute only
+# after an EC2 instance boots.
 #
 
-sudo systemctl stop "${SERVICE_NAME}.service" 2>/dev/null || true
+log_info "Stopping service if running..."
 
-echo "=========================================="
-echo "Attendance API configuration completed."
-echo "=========================================="
+systemctl stop "${SERVICE_NAME}" 2>/dev/null || true
+
+systemctl reset-failed "${SERVICE_NAME}" 2>/dev/null || true
+
+log_success "Service stopped."
+
+##############################################
+# Verify Installation
+##############################################
+
+log_info "Performing configuration validation..."
+
+required_paths=(
+
+"${SYSTEMD_SERVICE}"
+
+"${APP_DIR}/config.yaml"
+
+"${APP_DIR}/.venv/bin/gunicorn"
+
+"${APP_DIR}/app.py"
+
+"${LOG_DIR}"
+
+)
+
+for path in "${required_paths[@]}"
+do
+
+    if [[ ! -e "$path" ]]
+    then
+        log_error "$path missing."
+        exit 1
+    fi
+
+done
+
+log_success "Configuration validation successful."
+
+##############################################
+# Print Summary
+##############################################
+
+echo
+echo "=============================================="
+echo " Attendance API Configuration Summary"
+echo "=============================================="
+
+echo "Application Directory : ${APP_DIR}"
+
+echo "Service Name          : ${SERVICE_NAME}"
+
+echo "Systemd Unit          : ${SYSTEMD_SERVICE}"
+
+echo "Log Directory         : ${LOG_DIR}"
+
+echo "Application User      : ${APP_USER}"
+
+echo
+
+systemctl is-enabled "${SERVICE_NAME}"
+
+echo
+
+echo "=============================================="
+
+log_success "Attendance API configured successfully."
+
+exit 0
