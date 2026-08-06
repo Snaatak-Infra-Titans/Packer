@@ -1,0 +1,26 @@
+[Unit]
+Description=Attendance API
+Documentation=https://github.com/Snaatak-Infra-Titans/Attendance_API
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/Attendance_API
+Environment="PATH=/home/ubuntu/Attendance_API/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+Environment="CONFIG_FILE=/home/ubuntu/Attendance_API/config.yaml"
+ExecStart=/home/ubuntu/Attendance_API/.venv/bin/gunicorn app:app --log-config /home/ubuntu/Attendance_API/log.conf --bind 0.0.0.0:8081
+Restart=always
+RestartSec=15
+TimeoutStartSec=60
+TimeoutStopSec=30
+KillSignal=SIGTERM
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=attendance-api
+
+[Install]
+WantedBy=multi-user.target

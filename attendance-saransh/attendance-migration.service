@@ -1,0 +1,23 @@
+[Unit]
+Description=Attendance API Database Migration
+Documentation=https://github.com/Snaatak-Infra-Titans/Attendance_API
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/Attendance_API
+Environment="CONFIG_FILE=/home/ubuntu/Attendance_API/config.yaml"
+ExecStart=/usr/local/bin/liquibase --defaults-file=/home/ubuntu/Attendance_API/liquibase.properties update
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=300
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=attendance-migration
+
+[Install]
+WantedBy=multi-user.target
