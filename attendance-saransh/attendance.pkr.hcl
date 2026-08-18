@@ -34,11 +34,10 @@ source "amazon-ebs" "attendance" {
     most_recent = true
   }
 
-  subnet_id = var.subnet_id
-
-  security_group_ids = [
-    var.security_group_id
-  ]
+  # Use the AWS default VPC.
+  # subnet_id and security_group_ids are intentionally omitted.
+  # Packer will use the default VPC and create/use its temporary
+  # security group.
 
   associate_public_ip_address = true
 
@@ -53,43 +52,28 @@ source "amazon-ebs" "attendance" {
     volume_type = "gp3"
 
     delete_on_termination = true
-
   }
 
   tags = {
 
     Name        = var.ami_name
-
     Environment = var.environment
-
     Application = var.application
-
     Service     = "attendance-api"
-
     Owner       = var.owner
-
     CostCenter  = var.cost_center
-
     CreatedBy   = "Packer"
-
   }
 
   run_tags = {
 
-    Name = "attendance-api-packer-builder"
-
+    Name        = "attendance-api-packer-builder"
     Environment = var.environment
-
     Application = var.application
-
-    Service = "attendance-api"
-
-    Owner = var.owner
-
-    CreatedBy = "Packer"
-
+    Service     = "attendance-api"
+    Owner       = var.owner
+    CreatedBy   = "Packer"
   }
-
 }
 
 ###############################################################################
@@ -113,7 +97,6 @@ build {
     script = "install.sh"
 
     execute_command = "chmod +x {{ .Path }} && sudo {{ .Path }}"
-
   }
 
   ############################################################
@@ -122,10 +105,8 @@ build {
 
   provisioner "file" {
 
-    source = "attendance-api.service"
-
+    source      = "attendance-api.service"
     destination = "/tmp/attendance-api.service"
-
   }
 
   ############################################################
@@ -134,10 +115,8 @@ build {
 
   provisioner "file" {
 
-    source = "attendance-migration.service"
-
+    source      = "attendance-migration.service"
     destination = "/tmp/attendance-migration.service"
-
   }
 
   ############################################################
@@ -149,7 +128,6 @@ build {
     script = "configure.sh"
 
     execute_command = "chmod +x {{ .Path }} && sudo {{ .Path }}"
-
   }
 
   ############################################################
@@ -161,7 +139,5 @@ build {
     script = "validate.sh"
 
     execute_command = "chmod +x {{ .Path }} && sudo {{ .Path }}"
-
   }
-
 }

@@ -8,57 +8,35 @@ sudo apt-get clean
 sudo rm -rf /var/lib/apt/lists/*
 sudo apt-get update
 
-echo "========== APT CACHE =========="
+echo "Repairing base Ubuntu packages..."
 
-apt-cache policy zip
-apt-cache policy python3
-apt-cache policy openjdk-17-jdk
-apt-cache policy elasticsearch
-
-echo "========== APT SEARCH =========="
-
-apt-cache search "^zip$"
-apt-cache search "^python3$"
-apt-cache search "^elasticsearch$"
-
-echo "========== DPKG ARCH =========="
-
-dpkg --print-architecture
-
-echo "========== SOURCES =========="
-
-grep -R "^deb" /etc/apt/ || true
-
-echo "========== OS =========="
-
-cat /etc/os-release
-
-echo "========== APT SOURCES =========="
-
-cat /etc/apt/sources.list || true
-ls -l /etc/apt/sources.list.d/ || true
+sudo apt-get -y -f install
+sudo DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade
 
 echo "Installing required packages..."
 
-sudo apt-get install -y \
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git \
     curl \
     wget \
     unzip \
-    zip \
     python3 \
     python3-pip \
     python3-venv \
-    openjdk-17-jdk \
-    jq \
     apt-transport-https \
     ca-certificates \
     gnupg
 
+echo "Verifying required software..."
+
+python3 --version
+pip3 --version
+git --version
+
 echo "Adding Elasticsearch repository..."
 
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | \
-sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+sudo gpg --dearmor --yes -o /usr/share/keyrings/elasticsearch-keyring.gpg
 
 echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | \
 sudo tee /etc/apt/sources.list.d/elastic-7.x.list >/dev/null
@@ -67,19 +45,9 @@ sudo apt-get update
 
 echo "Installing Elasticsearch..."
 
-sudo apt-get install -y elasticsearch
-
-echo "Verifying installed software..."
-
-python3 --version
-pip3 --version
-java -version
-git --version
-jq --version
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y elasticsearch
 
 echo "Checking Elasticsearch installation..."
-
-dpkg -l | grep elasticsearch
 
 if [ ! -f /usr/share/elasticsearch/bin/elasticsearch ]; then
     echo "ERROR: Elasticsearch binary not found."
@@ -99,8 +67,6 @@ git clone -b main https://github.com/Snaatak-Infra-Titans/Notification.git
 sudo chown -R ubuntu:ubuntu /home/ubuntu/Notification
 
 cd /home/ubuntu/Notification
-
-echo "Notification repository cloned successfully."
 
 echo "Verifying repository structure..."
 
@@ -127,8 +93,6 @@ deactivate
 echo "Creating log directory..."
 
 mkdir -p /home/ubuntu/logs
-
-echo "Setting ownership..."
 
 sudo chown -R ubuntu:ubuntu /home/ubuntu/Notification
 sudo chown -R ubuntu:ubuntu /home/ubuntu/logs
