@@ -28,7 +28,7 @@ source "amazon-ebs" "salary" {
     most_recent = true
   }
 
-  
+
 
   associate_public_ip_address = true
 
@@ -83,6 +83,8 @@ build {
   # Validate AMI
   #
   provisioner "shell" {
-    script = "validate.sh"
+    script          = "validate.sh"
+    execute_command = "chmod +x {{ .Path }} && sudo {{ .Path }}"
+
   }
 }

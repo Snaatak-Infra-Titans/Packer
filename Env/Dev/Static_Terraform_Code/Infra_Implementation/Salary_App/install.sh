@@ -54,7 +54,6 @@ sudo apt-get install -y \
     curl \
     wget \
     unzip \
-    zip \
     python3 \
     python3-pip \
     openjdk-17-jdk \
